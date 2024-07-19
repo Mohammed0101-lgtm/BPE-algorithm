@@ -1,3 +1,4 @@
+/*--include cpp standard librearies--*/
 #include <string>
 #include <iostream>
 #include <vector>
@@ -6,9 +7,10 @@
 #include <map>
 #include <stdexcept>
 
+// define token tyoe as a vector of unisgned 8 bit integers
 using token = std::vector<uint8_t>;
-const std::string token_pattern = "\\S+";
 
+/*--prototypes--*/
 std::string getStr(const std::string& prompt);
 std::vector<uint8_t> encode(char32_t uni_char);
 char32_t decode(const std::vector<uint8_t>& bytes);
@@ -23,37 +25,49 @@ std::vector<token> tokenize(std::string text);
 
 std::map<int, std::pair<token, token>> merges;
 
+// main function included for testing as usual
 int main() {
+    // prompt the user for a string of characters
     std::string text = getStr("Enter text: ");
     if (text.empty()) {
         return -1;
     }
 
+    // get the utf-8 encoding of the text
+    // this return a stream of tokens where
+    // each integer corresponds to a character
     std::vector<token> pre_tokens;
     for (int i = 0; i < text.length(); i++) {
         pre_tokens.push_back(encode(text[i]));
     }
 
+    // print the preprocessed tokens
     for (token tok : pre_tokens) {
         print_token(tok);
         std::cout << std::endl;
     }
 
+    // tokenize the text using BPE algorithm
     std::vector<token> tokens = tokenize(text);
 
+    // print tokens
     std::cout << "merged" << '\n';
     for (token tok : tokens) {
         print_token(tok);
         std::cout << std::endl;
     }
 
+    // calculate and print the compression ratio for reference
     float ratio = static_cast<float>(pre_tokens.size()) / static_cast<float>(tokens.size());      
     std::cout << "compression ratio : " << ratio << std::endl; 
     
     return 0;
 }
 
+// tokenise text using the byte pair encoding
 std::vector<token> tokenize(std::string text) {
+    // initialize a tokens array by utf-8 encoding 
+    // each character in the text
     std::vector<token> tokens;
     int len = text.length();
     for (int i = 0; i < len; i++) {
@@ -61,18 +75,22 @@ std::vector<token> tokenize(std::string text) {
         tokens.push_back(tok);
     }
 
+    // get all possible adjacent pairs in the text
     std::vector<std::pair<token, token>> pairs = get_pairs(tokens);
+    // sort pairs based on the frequency of distinct pairs
     pairs = frequent(pairs);
 
     int vocab_size = 300; // you can change this according to the specific requirements of the program
-    int times = vocab_size - 256;
+    int times = vocab_size - 256; // the number of merging times
+    // copy tokens array
     std::vector<token> id = tokens;
 
     for (int i = 0; i < times; i++) {
+        // get updated most common pair
         std::vector<std::pair<token, token>> common = frequent(get_pairs(id));
-        int idx = 256 + i; // create new token
-        id = merge(id, idx, pairs[0]);
-        merges[idx] = pairs[0];
+        int idx = 256 + i; // create new token id
+        id = merge(id, idx, pairs[0]); // create a new token
+        merges[idx] = pairs[0]; // store token
     }
 
     return id;
@@ -81,17 +99,19 @@ std::vector<token> tokenize(std::string text) {
 // merge the pair into one token
 std::vector<token> merge (std::vector<token>& tokens,  int new_tok,
                           std::pair<token, token> pair) {
-
+    
     std::vector<token> merged;
     int size = tokens.size(), i = 0;
 
     while (i < size - 1) {
+        // if the given pair is found
         if (tokens[i] == pair.first && tokens[i + 1] == pair.second) {
             std::vector<uint8_t> t;
-            t.push_back(new_tok);
-            merged.push_back(t);
+            t.push_back(new_tok); // create new token for this pair
+            merged.push_back(t); // add token to list
             i += 2; // skip this pair
         } else {
+            // add the current token if the pair not found
             merged.push_back(tokens[i]);
             i++;
         }
@@ -110,16 +130,21 @@ bool valueComparator(const std::pair<std::pair<token, token>, int>& a,
 std::vector<std::pair<token, token>> frequent
     (const std::vector<std::pair<token, token>>& pairs) {
     
-    std::map<std::pair<token, token>, int> counts;
+    std::map<std::pair<token, token>, int> counts; // frequency map 
     std::vector<std::pair<token, token>> sorted_pairs; 
 
+    // count frequency of each pair
     for (const auto& pair : pairs) {
         counts[pair]++;
     }
 
+    // convert the map to a vector and sort the vector
+    // sorting the map would be based on the key of each entry which is the pair 
+    // while we want to sort the pair based on the value of each entry
     std::vector<std::pair<std::pair<token, token>, int>> vec(counts.begin(), counts.end());
     std::sort(vec.begin(), vec.end(), valueComparator);
 
+    // store the pairs in the result vector
     for (const auto& entry : vec) {
         sorted_pairs.push_back(entry.first);
     }
@@ -204,6 +229,7 @@ char32_t decode(const std::vector<uint8_t>& bytes) {
     return unicode;
 }
 
+// prompt the user for a string and return it
 std::string getStr(const std::string& prompt) {
     std::cout << prompt;
     std::string s;
