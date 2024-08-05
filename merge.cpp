@@ -73,7 +73,6 @@ std::vector<token> tokenize(std::string text) {
     std::vector<token> id = tokens;
 
     for (int i = 0; i < times; i++) {
-        // get updated most common pair
         std::vector<std::pair<token, token>> common = frequent(get_pairs(id));
         int idx                                     = 256 + i; 
         id                                          = merge(id, idx, pairs[0]); 
@@ -83,7 +82,7 @@ std::vector<token> tokenize(std::string text) {
     return id;
 }
 
-// merge the pair into one token
+
 std::vector<token> merge (std::vector<token>& tokens,  int new_tok,
                           std::pair<token, token> pair) {
     
@@ -91,14 +90,12 @@ std::vector<token> merge (std::vector<token>& tokens,  int new_tok,
     int size = tokens.size(), i = 0;
 
     while (i < size - 1) {
-        // if the given pair is found
         if (tokens[i] == pair.first && tokens[i + 1] == pair.second) {
             std::vector<uint8_t> t;
-            t.push_back(new_tok); // create new token for this pair
-            merged.push_back(t); // add token to list
-            i += 2; // skip this pair
+            t.push_back(new_tok); 
+            merged.push_back(t); 
+            i += 2; 
         } else {
-            // add the current token if the pair not found
             merged.push_back(tokens[i]);
             i++;
         }
@@ -112,32 +109,26 @@ bool valueComparator(const std::pair<std::pair<token, token>, int>& a,
     return a.second > b.second; 
 }
 
-// This functions sorts the pairs list in ascending 
-// order based on the frequncy of the pairs
+
 std::vector<std::pair<token, token>> frequent(
                     const std::vector<std::pair<token, token>>& pairs) {
     
-    std::map<std::pair<token, token>, int> counts; // frequency map 
+    std::map<std::pair<token, token>, int> counts; 
     std::vector<std::pair<token, token>>   sorted_pairs; 
 
-    // count frequency of each pair
     for (const auto& pair : pairs) 
         counts[pair]++;
 
-    // convert the map to a vector and sort the vector
-    // sorting the map would be based on the key of each entry which is the pair 
-    // while we want to sort the pair based on the value of each entry
     std::vector<std::pair<std::pair<token, token>, int>> vec(counts.begin(), counts.end());
     std::sort(vec.begin(), vec.end(), valueComparator);
 
-    // store the pairs in the result vector
     for (const auto& entry : vec) 
         sorted_pairs.push_back(entry.first);
 
     return sorted_pairs;
 }
 
-// this just returns the set of all possible pairs
+
 std::vector<std::pair<token, token>> get_pairs(std::vector<token>& tokens) {
     std::vector<std::pair<token, token>> pairs;
     int size = tokens.size(), i = 0; 
@@ -155,11 +146,8 @@ std::vector<std::pair<token, token>> get_pairs(std::vector<token>& tokens) {
     return pairs;
 }
 
-// utf-8 encoder (turn a 32 bit char into an 8 bit integer)
+
 std::vector<uint8_t> encode(char32_t uni_char) {
-    // we use a vector instead of just an int
-    // to account for multiple byte representations 
-    // of any unicode code point 
     std::vector<uint8_t> utf8;
 
     if (uni_char <= 0x7F) 
@@ -183,7 +171,7 @@ std::vector<uint8_t> encode(char32_t uni_char) {
     return utf8;
 }
 
-// utf-8 decoder
+
 char32_t decode(const std::vector<uint8_t>& bytes) {
     char32_t unicode = 0;
 
@@ -197,13 +185,11 @@ char32_t decode(const std::vector<uint8_t>& bytes) {
         unicode = ((bytes[0] & 0x1F) << 6) |
                   (bytes[1] & 0x3F);
     } else if ((bytes[0] & 0xF0) == 0xE0) {
-        // 3-byte sequence
         if (bytes.size() < 3) throw std::runtime_error("Invalid UTF-8 sequence");
         unicode = ((bytes[0] & 0x0F) << 12) |
                   ((bytes[1] & 0x3F) << 6) |
                   (bytes[2] & 0x3F);
     } else if ((bytes[0] & 0xF8) == 0xF0) {
-        // 4-byte sequence
         if (bytes.size() < 4) throw std::runtime_error("Invalid UTF-8 sequence");
         unicode = ((bytes[0] & 0x07) << 18) |
                   ((bytes[1] & 0x3F) << 12) |
@@ -216,7 +202,7 @@ char32_t decode(const std::vector<uint8_t>& bytes) {
     return unicode;
 }
 
-// prompt the user for a string and return it
+
 std::string getStr(const std::string& prompt) {
     std::cout << prompt;
     std::string s;
