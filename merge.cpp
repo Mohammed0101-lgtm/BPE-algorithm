@@ -75,9 +75,9 @@ std::vector<token> tokenize(std::string text) {
     for (int i = 0; i < times; i++) {
         // get updated most common pair
         std::vector<std::pair<token, token>> common = frequent(get_pairs(id));
-        int idx     = 256 + i; // create new token id
-        id          = merge(id, idx, pairs[0]); // create a new token
-        merges[idx] = pairs[0]; // store token
+        int idx                                     = 256 + i; 
+        id                                          = merge(id, idx, pairs[0]); 
+        merges[idx]                                 = pairs[0]; 
     }
 
     return id;
