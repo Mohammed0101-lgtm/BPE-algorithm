@@ -36,33 +36,27 @@ int main() {
     for (int i = 0; i < text.length(); i++) 
         pre_tokens.push_back(encode(text[i]));
 
-    // print the preprocessed tokens
     for (token tok : pre_tokens) {
         print_token(tok);
         std::cout << std::endl;
     }
 
-    // tokenize the text using BPE algorithm
     std::vector<token> tokens = tokenize(text);
-
-    // print tokens
+    
     std::cout << "merged" << '\n';
     for (token tok : tokens) {
         print_token(tok);
         std::cout << std::endl;
     }
-
-    // calculate and print the compression ratio for reference
+    
     float ratio = static_cast<float>(pre_tokens.size()) / static_cast<float>(tokens.size());      
     std::cout << "compression ratio : " << ratio << std::endl; 
     
     return 0;
 }
 
-// tokenise text using the byte pair encoding
+
 std::vector<token> tokenize(std::string text) {
-    // initialize a tokens array by utf-8 encoding 
-    // each character in the text
     std::vector<token> tokens;
     int len = text.length();
     
