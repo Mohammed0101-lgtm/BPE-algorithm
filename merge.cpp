@@ -65,13 +65,11 @@ std::vector<token> tokenize(std::string text) {
         tokens.push_back(tok);
     }
 
-    // get all possible adjacent pairs in the text
     std::vector<std::pair<token, token>> pairs = get_pairs(tokens);
-    // sort pairs based on the frequency of distinct pairs
-    pairs          = frequent(pairs);
-    int vocab_size = 300; // you can change this according to the specific requirements of the program
-    int times      = vocab_size - 256; // the number of merging times
-    // copy tokens array
+    
+    pairs                 = frequent(pairs);
+    int vocab_size        = 300; 
+    int times             = vocab_size - 256; 
     std::vector<token> id = tokens;
 
     for (int i = 0; i < times; i++) {
