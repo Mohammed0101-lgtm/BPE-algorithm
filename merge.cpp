@@ -1,4 +1,3 @@
-/*--include cpp standard librearies--*/
 #include <string>
 #include <iostream>
 #include <vector>
@@ -7,10 +6,8 @@
 #include <map>
 #include <stdexcept>
 
-// define token tyoe as a vector of unisgned 8 bit integers
 using token = std::vector<uint8_t>;
 
-/*--prototypes--*/
 std::string getStr(const std::string& prompt);
 
 std::vector<uint8_t> encode(char32_t uni_char);
@@ -29,16 +26,11 @@ std::vector<token> tokenize(std::string text);
 
 std::map<int, std::pair<token, token>> merges;
 
-// main function included for testing as usual
 int main() {
-    // prompt the user for a string of characters
     std::string text = getStr("Enter text: ");
     if (text.empty()) 
         return -1;
 
-    // get the utf-8 encoding of the text
-    // this return a stream of tokens where
-    // each integer corresponds to a character
     std::vector<token> pre_tokens;
     
     for (int i = 0; i < text.length(); i++) 
