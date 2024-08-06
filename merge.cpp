@@ -7,13 +7,14 @@
 #include <cassert>
 
 using token = uint8_t;
-using pair = std::pair<token, token>;
+using pair  = std::pair<token, token>;
 
 struct pair_hash {
     template <class T1, class T2>
     std::size_t operator()(const std::pair<T1, T2>& p) const {
         auto h1 = std::hash<T1>{}(p.first);
         auto h2 = std::hash<T2>{}(p.second);
+        
         return h1 ^ (h2 << 1);
     }
 };
@@ -27,7 +28,9 @@ std::string read_file(const std::string& filepath) {
     if (!file.is_open()) 
         throw std::runtime_error("Failed to open file");
 
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    std::string content((std::istreambuf_iterator<char>(file)), 
+                         std::istreambuf_iterator<char>());
+
     file.close();
     
     return content;
@@ -90,16 +93,16 @@ std::vector<token> merge(const std::vector<token>& tokens, token new_tok, pair p
 
 std::vector<token> byte_pair_encoding(const std::string& text, int num_merges) {
     std::vector<token> tokens = tokenize(text);
-    int next_token = 256; 
+    int next_token            = 256; 
 
     for (int i = 0; i < num_merges; ++i) {
-        std::vector<pair> pairs = get_pairs(tokens);
+        std::vector<pair> pairs  = get_pairs(tokens);
         std::vector<pair> common = frequent(pairs);
 
         if (common.empty()) break;
 
         pair top_pair = common[0];
-        tokens = merge(tokens, next_token++, top_pair);
+        tokens        = merge(tokens, next_token++, top_pair);
     }
 
     return tokens;
@@ -108,7 +111,7 @@ std::vector<token> byte_pair_encoding(const std::string& text, int num_merges) {
 int main() {
     try {
         std::string text = read_file("text.txt");
-        int num_merges = 10; 
+        int num_merges   = 10; 
 
         std::vector<token> compressed_tokens = byte_pair_encoding(text, num_merges);
 
@@ -119,7 +122,7 @@ int main() {
         }
         
         std::cout << std::endl;
-        
+
     } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << std::endl;
         return 1;
