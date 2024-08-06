@@ -1,279 +1,124 @@
-#include <string>
 #include <iostream>
 #include <vector>
-#include <set>
-#include <map>
-#include <stdexcept>
+#include <unordered_map>
+#include <algorithm>
+#include <string>
+#include <fstream>
 #include <cassert>
 
-
-using token = std::vector<uint8_t>;
+using token = uint8_t;
 using pair = std::pair<token, token>;
 
-
-void print_token(token& tok) {
-	std::cout << '[';
-	for (uint8_t element : tok) {
-		std::cout << element;
-	}
-	
-	std::cout << ']';
-}
-
-
-std::string getStr(const std::string& prompt);
-char32_t decode(const std::vector<uint8_t>& bytes);
-std::vector<uint8_t> encode(char32_t uni_char);
-std::vector<token> tokenize(std::string& text);
-
-
-std::map<int, pair> merges;
-
-
-int main(void) {
-	std::string text = getStr("Enter text : ");
-
-	if (text.empty()) return -1;
-
-	std::vector<token> pre_tokens;
-	
-	size_t len = text.length();
-	for (int i = 0; i < len; i++) {
-		pre_tokens.push_back(encode(text[i]));
-	}
-
-	for (token tok : pre_tokens) {
-		print_token(tok);
-		std::cout << std::endl;
-	}
-
-	std::vector<token> tokens = tokenize(text);
-
-	std::cout << "merged" << std::endl;
-	for (token tok : tokens) {
-		print_token(tok);
-		std::cout << std::endl;
-	}
-
-	float ratio = tokens.size() > 0 ? static_cast<float>(pre_tokens.size()) / tokens.size() : 0.0f;
-    
-	std::cout << "compression ratio : " << ratio << std::endl;
-	return 0;
-}
-
-
-std::vector<pair> get_pairs(std::vector<token>& tokens) {
-    std::vector<pair> pairs;
-    size_t tokens_size = tokens.size();
-
-    for (size_t i = 0; i < tokens_size - 1; ++i) {
-        pair p;
-        p.first = tokens[i];
-        p.second = tokens[i + 1];
-        pairs.push_back(p);
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator()(const std::pair<T1, T2>& p) const {
+        auto h1 = std::hash<T1>{}(p.first);
+        auto h2 = std::hash<T2>{}(p.second);
+        return h1 ^ (h2 << 1);
     }
+};
 
+void print_token(token tok) {
+    std::cout << '[' << static_cast<int>(tok) << ']';
+}
+
+std::string read_file(const std::string& filepath) {
+    std::ifstream file(filepath, std::ios::in | std::ios::binary);
+    if (!file.is_open()) throw std::runtime_error("Failed to open file");
+
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+    return content;
+}
+
+token encode(char c) {
+    return static_cast<token>(static_cast<unsigned char>(c));
+}
+
+std::vector<token> tokenize(const std::string& text) {
+    std::vector<token> tokens;
+    for (char c : text) {
+        tokens.push_back(encode(c));
+    }
+    return tokens;
+}
+
+std::vector<pair> get_pairs(const std::vector<token>& tokens) {
+    std::vector<pair> pairs;
+    for (size_t i = 0; i < tokens.size() - 1; ++i) {
+        pairs.emplace_back(tokens[i], tokens[i + 1]);
+    }
     return pairs;
 }
 
+std::vector<pair> frequent(const std::vector<pair>& pairs) {
+    std::unordered_map<pair, int, pair_hash> counts;
+    for (const auto& p : pairs) {
+        counts[p]++;
+    }
 
-bool compare(const std::pair<pair, int>& a, const std::pair<pair, int>& b) {
-	return a.second > b.second;
+    std::vector<pair> sorted;
+    std::vector<std::pair<pair, int>> vec(counts.begin(), counts.end());
+    std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b) {
+        return a.second > b.second;
+    });
+
+    for (const auto& entry : vec) {
+        sorted.push_back(entry.first);
+    }
+
+    return sorted;
 }
 
-
-std::vector<token> merge(std::vector<token>& tokens, int new_tok, pair p) {
+std::vector<token> merge(const std::vector<token>& tokens, token new_tok, pair p) {
     std::vector<token> merged;
-    size_t tokens_size = tokens.size();
     size_t i = 0;
-
-    while (i < tokens_size) {
-        if (i < tokens_size - 1 && tokens[i] == p.first && tokens[i + 1] == p.second) {
-            token tok;
-            tok.push_back(new_tok);
-            merged.push_back(tok);
+    while (i < tokens.size()) {
+        if (i < tokens.size() - 1 && tokens[i] == p.first && tokens[i + 1] == p.second) {
+            merged.push_back(new_tok);
             i += 2;
         } else {
             merged.push_back(tokens[i++]);
         }
     }
-
     return merged;
 }
 
+std::vector<token> byte_pair_encoding(const std::string& text, int num_merges) {
+    std::vector<token> tokens = tokenize(text);
 
-std::vector<pair> frequent(const std::vector<pair>& pairs) {
-	std::map<pair, size_t> counts;
-	std::vector<pair> sorted;
-	
-	for (const pair& p : pairs) {
-		counts[p]++;
-	}
+    int next_token = 256; 
+    for (int i = 0; i < num_merges; ++i) {
+        std::vector<pair> pairs = get_pairs(tokens);
+        std::vector<pair> common = frequent(pairs);
 
-	std::vector<std::pair<pair, int>> vec(counts.begin(), counts.end());
-	std::sort(vec.begin(), vec.end(), compare);
-	
-	for (const auto& entry : vec) {
-		sorted.push_back(entry.first);
-	}
+        if (common.empty()) break;
 
-	return sorted;
+        pair top_pair = common[0];
+        tokens = merge(tokens, next_token++, top_pair);
+    }
+
+    return tokens;
 }
 
+int main() {
+    try {
+        std::string text = read_file("text.txt");
+        int num_merges = 10; 
 
-std::vector<token> tokenize(std::string& text) {
-	std::vector<token> tokens;
-	size_t len = text.length();
-	
-	for (int i = 0; i < len; i++) {
-		token tok = encode(text[i]);
-		tokens.push_back(tok);
-	}
+        std::vector<token> compressed_tokens = byte_pair_encoding(text, num_merges);
 
-	std::vector<pair> pairs = get_pairs(tokens);
-	
-	pairs = frequent(pairs);
-	int vocab_size = 300;
-	int times = vocab_size - 256;
-	std::vector<token> id = tokens;
-	
-	for (int i = 0; i < times; i++) {
-		std::vector<pair> common = frequent(get_pairs(id));
-		int idx = 256 + i;	
-		id = merge(id, idx, pairs[0]);
-		merges[idx] = pairs[0];
-	}
+        std::cout << "Compressed tokens:" << std::endl;
+        for (token tok : compressed_tokens) {
+            print_token(tok);
+            std::cout << ' ';
+        }
+        std::cout << std::endl;
 
-	return id;
+    } catch (const std::exception& ex) {
+        std::cerr << "Error: " << ex.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
-
-
-std::vector<uint8_t> encode(char32_t uni_char) {
-     std::vector<uint8_t> utf8;
- 
-     if (uni_char <= 0x7F)
-         utf8.push_back(static_cast<uint8_t>(uni_char));
-     else if (uni_char <= 0x7FF) {
-        utf8.push_back(static_cast<uint8_t>((uni_char >> 6) | 0xC0));
-         utf8.push_back(static_cast<uint8_t>((uni_char & 0x3F) | 0x80));
-     } else if (uni_char <= 0xFFFF) {
-         utf8.push_back(static_cast<uint8_t>((uni_char >> 12) | 0xE0));
-         utf8.push_back(static_cast<uint8_t>(((uni_char >> 6) & 0x3F) | 0x80));
-         utf8.push_back(static_cast<uint8_t>((uni_char & 0x3F) | 0x80));
-     } else if (uni_char <= 0x10FFFF) {
-         utf8.push_back(static_cast<uint8_t>((uni_char >> 18) | 0xF0));
-         utf8.push_back(static_cast<uint8_t>(((uni_char >> 12) & 0x3F) | 0x80));
-         utf8.push_back(static_cast<uint8_t>(((uni_char >> 6) & 0x3F) | 0x80));
-         utf8.push_back(static_cast<uint8_t>((uni_char & 0x3F) | 0x80));
-     } 
-     else 
-         throw std::runtime_error("Invalid unicode code point");
- 
-     return utf8;
-} 
-
-
-char32_t decode(const std::vector<uint8_t>& bytes) {
-    char32_t unicode = 0;
-
-    if (bytes.empty()) 
-        throw std::runtime_error("Empty UTF-8 sequence");
-
-    if ((bytes[0] & 0x80) == 0) 
-        unicode = bytes[0];
-    else if ((bytes[0] & 0xE0) == 0xC0) {
-        if (bytes.size() < 2) throw std::runtime_error("Invalid UTF-8 sequence");
-        unicode = ((bytes[0] & 0x1F) << 6) |
-                  (bytes[1] & 0x3F);
-    } else if ((bytes[0] & 0xF0) == 0xE0) {
-        if (bytes.size() < 3) throw std::runtime_error("Invalid UTF-8 sequence");
-        unicode = ((bytes[0] & 0x0F) << 12) |
-                  ((bytes[1] & 0x3F) << 6) |
-                  (bytes[2] & 0x3F);
-    } else if ((bytes[0] & 0xF8) == 0xF0) {
-        if (bytes.size() < 4) throw std::runtime_error("Invalid UTF-8 sequence");
-        unicode = ((bytes[0] & 0x07) << 18) |
-                  ((bytes[1] & 0x3F) << 12) |
-                  ((bytes[2] & 0x3F) << 6) |
-                  (bytes[3] & 0x3F);
-    } 
-    else 
-        throw std::runtime_error("Invalid UTF-8 sequence");
-
-    return unicode;
-}
-
-
-std::string getStr(const std::string& prompt) {
-	std::cout << prompt;
-	std::string input;
-	std::getline(std::cin, input);	
-
-	size_t len = input.length();
-	assert(len > 0);
-
-	if (len > 0 && input[len - 1] == '\n') 
-		input[len - 1] = '\0';
-
-	return input;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
