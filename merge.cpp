@@ -52,7 +52,8 @@ std::vector<token> tokenize(const std::string& text) {
 std::vector<pair> get_pairs(const std::vector<token>& tokens) {
     std::vector<pair> pairs;
 
-    for (size_t i = 0; i < tokens.size() - 1; ++i) 
+    size_t size = tokens.size();
+    for (size_t i = 0; i < size - 1; i++) 
         pairs.emplace_back(tokens[i], tokens[i + 1]);
     
     return pairs;
