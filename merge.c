@@ -65,48 +65,6 @@ char *read_file(const char *__restrict filename) {
     return buf;
 }
 
-token encode(char c) {
-    return (token)((unsigned char)c);
-}
-
-token *tokenize(const char *__restrict text) {
-    if (!text) 
-        return NULL;
-
-    size_t len    = strlen(text);
-    token *tokens = (token*)malloc(len * sizeof(token));
-    
-    if (!tokens) {
-        fprintf(stderr, 
-                "Failed to allocate memory\n");
-
-        return NULL;
-    }
-
-    for (int i = 0; i < len; i++) 
-        if (isalpha(text[i]) || isspace(text[i])) 
-            tokens[i] = encode(text[i]);
-
-    return tokens;
-}
-
-struct pair *get_pair(const token* tokens, size_t tokens_size) {
-    struct pair *pairs = (struct pair*)malloc((tokens_size - 1) * sizeof(struct pair));
-    
-    if (!pairs) {
-        fprintf(stderr, 
-                "Failed to allocate memory\n");
-        
-        return NULL;
-    }
-
-    for (int i = 0, k = 0; i < tokens_size - 1;  i++, k++) {
-        pairs[k].first  = tokens[i];
-        pairs[k].second = tokens[i + 1];
-    }
-
-    return pairs;
-}
 
 uint64_t hash_pair(const struct pair* pair) {
     uint64_t hash = 5381;
@@ -206,6 +164,51 @@ void free_map(struct map *m) {
         free(m);
     }
 }
+
+
+token encode(char c) {
+    return (token)((unsigned char)c);
+}
+
+token *tokenize(const char *__restrict text) {
+    if (!text) 
+        return NULL;
+
+    size_t len    = strlen(text);
+    token *tokens = (token*)malloc(len * sizeof(token));
+    
+    if (!tokens) {
+        fprintf(stderr, 
+                "Failed to allocate memory\n");
+
+        return NULL;
+    }
+
+    for (int i = 0; i < len; i++) 
+        if (isalpha(text[i]) || isspace(text[i])) 
+            tokens[i] = encode(text[i]);
+
+    return tokens;
+}
+
+struct pair *get_pair(const token* tokens, size_t tokens_size) {
+    struct pair *pairs = (struct pair*)malloc((tokens_size - 1) * sizeof(struct pair));
+    
+    if (!pairs) {
+        fprintf(stderr, 
+                "Failed to allocate memory\n");
+        
+        return NULL;
+    }
+
+    for (int i = 0, k = 0; i < tokens_size - 1;  i++, k++) {
+        pairs[k].first  = tokens[i];
+        pairs[k].second = tokens[i + 1];
+    }
+
+    return pairs;
+}
+
 
 void insert(struct entry entry, struct entry **array, size_t size) {
     int i = 0;
