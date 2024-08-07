@@ -140,7 +140,7 @@ struct map *create_map(int capacity) {
 
 int get(struct map *m, const struct pair *key) {
     int16_t index = hash_pair(key);
-    index = index % m->capacity;
+    index         = index % m->capacity;
     assert(index >= 0 && index < m->capacity);
     struct entry *e = m->entries[index];
 
@@ -173,12 +173,12 @@ void put(struct map *map, struct pair key) {
         return;
     }
 
-    new_entry->value = 1; // Initialize to 1, as it's a new entry
-    new_entry->key.first = key.first;
+    new_entry->value      = 1; 
+    new_entry->key.first  = key.first;
     new_entry->key.second = key.second;
-    new_entry->next = map->entries[index];
-    map->entries[index] = new_entry;  
-    map->size++; // Increment size
+    new_entry->next       = map->entries[index];
+    map->entries[index]   = new_entry;  
+    map->size++; 
 }
 
 void free_pair_array(struct pair *pairs) {
@@ -191,12 +191,14 @@ void free_map(struct map *m) {
     if (m) {
         for (size_t i = 0; i < m->capacity; i++) {
             struct entry *e = m->entries[i];
+     
             while (e) {
                 struct entry *next = e->next;
                 free(e);
                 e = next;
             }
         }
+     
         free(m->entries);
         free(m);
     }
@@ -235,21 +237,21 @@ struct pair *frequent(const struct pair *pairs, size_t pairs_size) {
     int k = 0;
     for (int i = 0; i < counts->capacity; i++) {
         struct entry *e = counts->entries[i];
+     
         while (e) {
             vec[k++] = e;
-            e = e->next;
+            e        = e->next;
         }
     }
 
-    for (int i = 0; i < k - 1; i++) {
-        for (int j = i + 1; j < k; j++) {
+    for (int i = 0; i < k - 1; i++) 
+        for (int j = i + 1; j < k; j++) 
             if (vec[j]->value > vec[i]->value) {
                 struct entry *temp = vec[i];
-                vec[i] = vec[j];
-                vec[j] = temp;
+                vec[i]             = vec[j];
+                vec[j]             = temp;
             }
-        }
-    }
+
 
     struct pair *sorted = (struct pair*)malloc(pairs_size * sizeof(struct pair));
     if (!sorted) {
@@ -261,16 +263,14 @@ struct pair *frequent(const struct pair *pairs, size_t pairs_size) {
         return NULL;
     }
 
-    for (int i = 0; i < k; i++) {
+    for (int i = 0; i < k; i++)
         sorted[i] = vec[i]->key;
-    }
 
     free(vec);
     free_map(counts);
     
     return sorted;
 }
-
 
 
 token *merge(const token *tokens, size_t tokens_size, token new_token, struct pair p, size_t *returnSize) {
@@ -299,18 +299,17 @@ token *merge(const token *tokens, size_t tokens_size, token new_token, struct pa
 
 token *byte_pair_encode(const char *text, int num_merges, size_t *returnSize) {
     token *tokens = tokenize(text);
-    if (!tokens) {
+    if (!tokens) 
         return NULL;
-    }
     
-    int next = 256;
+    int next                    = 256;
     size_t returned_tokens_size = strlen(text);
 
-    struct pair *pairs;
-    struct pair *common;
+    struct pair *pairs  = NULL;
+    struct pair *common = NULL;
 
     for (int i = 0; i < num_merges; i++) {
-        pairs = get_pair(tokens, strlen(text));
+        pairs  = get_pair(tokens, strlen(text));
         common = frequent(pairs, strlen(text) - 1);
         if (!pairs || !common) {
             free(tokens);
@@ -318,15 +317,17 @@ token *byte_pair_encode(const char *text, int num_merges, size_t *returnSize) {
         }
 
         struct pair top_pair = common[0];
-        size_t new_size;
-        token *new_tokens = merge(tokens, returned_tokens_size, next++, top_pair, &new_size);
+        size_t new_size      = 0;
+        token *new_tokens    = merge(tokens, returned_tokens_size, next++, top_pair, &new_size);
+        
         if (!new_tokens) {
             free(pairs);
             free(common);
             free(tokens);
             return NULL;
         }
-        tokens = new_tokens;
+        
+        tokens               = new_tokens;
         returned_tokens_size = new_size;
         
         free(pairs);
@@ -339,10 +340,10 @@ token *byte_pair_encode(const char *text, int num_merges, size_t *returnSize) {
 
 
 int main(void) {
-    char *text = read_file("text.txt");
-    int num_merges = 10;
+    char *text         = read_file("text.txt");
+    int num_merges     = 10;
     size_t tokens_size = 0;
-    token *tokens = byte_pair_encode(text, num_merges, &tokens_size);
+    token *tokens      = byte_pair_encode(text, num_merges, &tokens_size);
     
     if (!tokens) 
         return -1;
