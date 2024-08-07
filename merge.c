@@ -165,7 +165,6 @@ void free_map(struct map *m) {
     }
 }
 
-
 token encode(char c) {
     return (token)((unsigned char)c);
 }
