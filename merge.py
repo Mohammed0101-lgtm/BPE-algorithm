@@ -8,7 +8,7 @@ def read_file(filename):
     return text
 
 def tokenize(text):
-    tokens = [ord(c) for c in text]  
+    tokens = [ord(c) for c in text]   
     return tokens
 
 def get_pairs(tokens):
