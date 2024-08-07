@@ -70,6 +70,9 @@ token encode(char c) {
 }
 
 token *tokenize(const char *__restrict text) {
+    if (!text) 
+        return NULL;
+
     size_t len    = strlen(text);
     token *tokens = (token*)malloc(len * sizeof(token));
     
