@@ -376,7 +376,7 @@ token* byte_pair_encode(const char* text, int num_merges, size_t* returnSize) {
 
 int main(void) {
     char*  text        = read_file("text.txt");
-    int    num_merges  = 10;
+    int    num_merges  = 256;
     size_t tokens_size = 0;
     token* tokens      = byte_pair_encode(text, num_merges, &tokens_size);
 
