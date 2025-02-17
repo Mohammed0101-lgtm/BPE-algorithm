@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX_CAPACITY 1000
 
@@ -150,9 +151,38 @@ char* read_file(const char* filename) {
     return text;
 }
 
-int main() {
-    const char* filename = "text.txt";
-    char*       text     = read_file(filename);
+unsigned long strToNum(const char *str) {
+	if (!str) 
+		return 0;
+	if (str[0] == '-')
+		return 0;
+
+	int l = strlen(str);
+	unsigned long fac = pow(10, l - 1); 
+	unsigned long ret = 0;	
+	
+	for (int i = 0; i < l; i++) 
+	{
+		ret += fac * (str[i] - '0');
+		fac /= 10;
+	}
+
+	return ret;
+}
+
+int main(int argc, char **argv) {
+	const char *filename = "text.txt";
+	int num_merges = 200;
+
+	if (argc == 2)
+		filename = strdup(argv[1]);
+	else if (argc == 3)
+	{
+		filename = strdup(argv[1]);
+		num_merges = strToNum(argv[2]);
+	}
+
+    char* text = read_file(filename);
     if (!text)
     {
         fprintf(stderr, "Failed to read file: %s\n", filename);
@@ -166,7 +196,6 @@ int main() {
 
 
     size_t tokensSize = text_length;
-    int    num_merges = 200;
 
     printf("Original Tokens:\n");
     debug_tokens(tokens, tokensSize);
@@ -180,3 +209,10 @@ int main() {
     free(text);
     return EXIT_SUCCESS;
 }
+
+
+
+
+
+
+
