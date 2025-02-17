@@ -172,7 +172,7 @@ unsigned long strToNum(const char *str) {
 
 int main(int argc, char **argv) {
 	const char *filename = "text.txt";
-	int num_merges = 200;
+	unsigned long num_merges = 200;
 
 	if (argc == 2)
 		filename = strdup(argv[1]);
